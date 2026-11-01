@@ -441,13 +441,13 @@ state.corr=state.corr||[];
 const corrFmt=n=>{n=Math.round(+n||0);return(n>0?'+':n<0?'−':'')+Math.abs(n).toLocaleString('pl-PL')};
 function corrBuild(){
  if($('corrForm'))return;
- $('corr').innerHTML=`<div class="panel" id="corrForm"><h3>Korekta stanu · ${esc(CORR.name)}</h3><p class="hint">${CORR.hint}</p><div class="grid"><label>Zlecenie<select id="cOrder" onchange="corrSel()"></select></label><label>Korygowana wartość<select id="cField" onchange="corrSel()"></select></label><label>Stan wg systemu [szt.]<input id="cSys" readonly></label><label>Stan faktyczny [szt.]<input id="cCnt" type="number" min="0" step="1" inputmode="numeric" oninput="corrCalc()"></label><label>Korekta (różnica)<input id="cDelta" readonly></label><label>Powód<select id="cReason"><option>Inwentaryzacja</option><option>Błąd zliczenia</option><option>Pomyłka we wpisie</option><option>Inne</option></select></label><label>Uwaga (opcjonalnie)<input id="cNote" maxlength="200"></label></div><p id="cWarn" class="hint"></p><button onclick="corrAdd()">Zapisz korektę</button></div><div class="panel"><h3>Historia korekt</h3><div id="corrList"></div></div>`}
-function corrCur(){const o=$('cOrder').value,f=CORR.fields.find(x=>x.k===$('cField').value);return{o,f,sys:o&&f?Math.round(+f.sys(o)||0):0}}
-function corrCalc(){const{o,f,sys}=corrCur(),c=$('cCnt').value,has=c!==''&&isFinite(+c),d=has?Math.round(+c)-sys:0,w=has&&d!==0&&CORR.warn?(CORR.warn(o,f,d)||''):'';$('cSys').value=o?String(sys):'';$('cDelta').value=has?corrFmt(d):'';$('cWarn').textContent=w?'⚠ '+w:'';$('cWarn').style.color=w?'#c0392b':'';$('cWarn').style.fontWeight=w?'700':''}
-function corrSel(){$('cCnt').value='';corrCalc()}
+ $('corr').innerHTML=`<div class="panel" id="corrForm"><h3>Korekta stanu · ${esc(CORR.name)}</h3><p class="hint">${CORR.hint}</p><div class="grid"><label>Zlecenie<select id="krOrder" onchange="corrSel()"></select></label><label>Korygowana wartość<select id="krField" onchange="corrSel()"></select></label><label>Stan wg systemu [szt.]<input id="krSys" readonly></label><label>Stan faktyczny [szt.]<input id="krCnt" type="number" min="0" step="1" inputmode="numeric" oninput="corrCalc()"></label><label>Korekta (różnica)<input id="krDelta" readonly></label><label>Powód<select id="krReason"><option>Inwentaryzacja</option><option>Błąd zliczenia</option><option>Pomyłka we wpisie</option><option>Inne</option></select></label><label>Uwaga (opcjonalnie)<input id="krNote" maxlength="200"></label></div><p id="krWarn" class="hint"></p><button onclick="corrAdd()">Zapisz korektę</button></div><div class="panel"><h3>Historia korekt</h3><div id="corrList"></div></div>`}
+function corrCur(){const o=$('krOrder').value,f=CORR.fields.find(x=>x.k===$('krField').value);return{o,f,sys:o&&f?Math.round(+f.sys(o)||0):0}}
+function corrCalc(){const{o,f,sys}=corrCur(),c=$('krCnt').value,has=c!==''&&isFinite(+c),d=has?Math.round(+c)-sys:0,w=has&&d!==0&&CORR.warn?(CORR.warn(o,f,d)||''):'';$('krSys').value=o?String(sys):'';$('krDelta').value=has?corrFmt(d):'';$('krWarn').textContent=w?'⚠ '+w:'';$('krWarn').style.color=w?'#c0392b':'';$('krWarn').style.fontWeight=w?'700':''}
+function corrSel(){$('krCnt').value='';corrCalc()}
 function corrRefresh(){
  corrBuild();
- const names=CORR.names(),sel=$('cOrder'),cur=sel.value,fs=$('cField');
+ const names=CORR.names(),sel=$('krOrder'),cur=sel.value,fs=$('krField');
  sel.innerHTML=names.length?names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join(''):'<option value="">— brak zleceń —</option>';
  sel.value=names.includes(cur)?cur:(names[0]||'');
  if(!fs.options.length)fs.innerHTML=CORR.fields.map(f=>`<option value="${f.k}">${esc(f.label)}</option>`).join('');
@@ -457,17 +457,17 @@ function corrList(){
  $('corrList').innerHTML=L.length?'<div style="overflow-x:auto"><table><tr><th>Data</th><th>Zlecenie</th><th>Wartość</th><th>System → faktycznie</th><th>Korekta</th><th>Powód</th><th>Uwaga</th><th>Kto</th><th></th></tr>'+L.map(e=>{const f=CORR.fields.find(x=>x.k===e.corr_field);return`<tr><td>${esc(e.date||'')}</td><td>${esc(CORR.orderOf(e)||'')}</td><td>${esc(f?f.label:(e.corr_field||''))}</td><td>${esc(e.corr_sys)} → ${esc(e.corr_cnt)}</td><td><b>${corrFmt(e[e.corr_field])}</b></td><td>${esc(e.corr_reason||'')}</td><td>${esc(e.notes||'')}</td><td>${esc(e.by||'')}</td><td>${can('correct')?`<button class="danger" onclick="corrDel('${esc(e.uid)}')">Usuń</button>`:''}</td></tr>`}).join('')+'</table></div>':'<p class="hint">Brak korekt.</p>'}
 function corrAdd(){
  if(!can('correct'))return denied();
- const{o,f,sys}=corrCur(),c=$('cCnt').value;
+ const{o,f,sys}=corrCur(),c=$('krCnt').value;
  if(!o||!f)return alert('Wybierz zlecenie i korygowaną wartość.');
  if(c===''||!isFinite(+c)||+c<0)return alert('Wpisz stan faktyczny (liczba 0 lub większa).');
  const cnt=Math.round(+c),d=cnt-sys;
  if(d===0)return alert('Stan faktyczny jest zgodny z systemem – korekta niepotrzebna.');
  const w=CORR.warn?CORR.warn(o,f,d):'';
  if(!confirm(`Zapisać korektę?\n\n${o} · ${f.label}\nstan w systemie: ${sys}\nstan faktyczny: ${cnt}\nkorekta: ${corrFmt(d)}`+(w?`\n\n⚠ ${w}`:'')))return;
- const now=Date.now(),e={uid:newUid(),created:now,updated:now,kind:'corr',date:today(),by:me().name,corr_field:f.k,corr_sys:sys,corr_cnt:cnt,corr_reason:$('cReason').value,notes:$('cNote').value.trim(),...CORR.entry(o,f,d)};
+ const now=Date.now(),e={uid:newUid(),created:now,updated:now,kind:'corr',date:today(),by:me().name,corr_field:f.k,corr_sys:sys,corr_cnt:cnt,corr_reason:$('krReason').value,notes:$('krNote').value.trim(),...CORR.entry(o,f,d)};
  state.corr.push(e);
  logEv('Korekta stanu',`${o} · ${f.label}: ${sys} → ${cnt} (${corrFmt(d)}) · ${e.corr_reason}${e.notes?' · '+e.notes:''}`);
- $('cCnt').value='';$('cNote').value='';save();render()}
+ $('krCnt').value='';$('krNote').value='';save();render()}
 function corrDel(uid){
  if(!can('correct'))return denied();
  const e=state.corr.find(x=>x.uid===uid);if(!e)return;
